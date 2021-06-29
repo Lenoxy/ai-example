@@ -1,10 +1,8 @@
 import numpy as np
 import pandas as pd
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
-
-tf.disable_v2_behavior()
 
 diabetes_data = pd.read_csv('testdata/diabetes.csv')
 
@@ -45,7 +43,20 @@ x_train, x_test, y_train, y_test = train_test_split(x_data, y_label, train_size=
 
 # Train
 
-input_function = tf.estimator.inputs.pandas_input_fn(
+def input_function():
+    features = {
+        'number_pregnant': diabetes_data['Number_pregnant'],
+        'glucose_concentration': diabetes_data['Glucose_concentration'],
+        'blood_pressure': diabetes_data['Blood_pressure'],
+        'triceps': diabetes_data['Triceps'],
+        'insulin': diabetes_data['Insulin'],
+        'bmi': diabetes_data['BMI'],
+        'pedigree': diabetes_data['Pedigree'],
+        'group': diabetes_data['Blood_pressure'],
+    }
+    return features,
+
+input_function = tf.estimator(
     x=x_train,
     y=y_train,
     batch_size=10,
@@ -81,7 +92,20 @@ predict_input_function = tf.estimator.inputs.pandas_input_fn(
     shuffle=False
 )
 
-prediction_results = model.predict(predict_input_function)
+raw_prediction_results = list(model.predict(predict_input_function))
 
-print(list(prediction_results))
+print(raw_prediction_results)
 
+predictions = []
+
+# TODO: implement Tensorflow V2 first.
+# for single_prediction in raw_prediction_results:
+#     predictions.append(single_prediction.get('probabilities')[0])
+#
+#
+# print(np.column_stack((predictions, x_test)))
+#
+# pd.DataFrame(
+#     data={'number_pregnant':}
+#
+# )
