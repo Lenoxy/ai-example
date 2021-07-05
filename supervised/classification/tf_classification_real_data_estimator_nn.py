@@ -56,13 +56,6 @@ def input_function():
     }
     return features,
 
-input_function = tf.estimator(
-    x=x_train,
-    y=y_train,
-    batch_size=10,
-    num_epochs=1000,
-    shuffle=True
-)
 
 model = tf.estimator.LinearClassifier(feature_columns=feature_columns, n_classes=2)
 
