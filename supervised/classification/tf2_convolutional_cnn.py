@@ -7,9 +7,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.keras.datasets import cifar10
 
-
 MODEL_SAVE_PATH = 'models/tf2_convolutional_cnn'
-
 
 class_names = np.array(['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'])
 
@@ -28,9 +26,10 @@ if os.path.exists(MODEL_SAVE_PATH):
     print('Using existing model from', MODEL_SAVE_PATH)
     model = tf.keras.models.load_model(MODEL_SAVE_PATH)
 else:
-    print('No existing model found. Creating a new model.')
+    print('No existing model found. Creating a new model...')
     model = tf.keras.models.Sequential()
-    model.add(tf.keras.layers.Conv2D(filters=32, kernel_size=3, padding="same", activation="relu", input_shape=[32, 32, 3]))
+    model.add(
+        tf.keras.layers.Conv2D(filters=32, kernel_size=3, padding="same", activation="relu", input_shape=[32, 32, 3]))
     model.add(tf.keras.layers.Conv2D(filters=32, kernel_size=3, padding="same", activation="relu"))
     model.add(tf.keras.layers.MaxPool2D(pool_size=2, strides=2, padding="valid"))
     model.add(tf.keras.layers.Conv2D(filters=64, kernel_size=3, padding="same", activation="relu"))
@@ -51,18 +50,13 @@ else:
     test_loss, test_accuracy = model.evaluate(x_test, y_test)
     print("Test accuracy:", str(test_accuracy))
 
-
-print('size:', y_test.size)
 sample = randrange(y_test.size)
-
 print("Sample index at", sample)
 
-np.set_printoptions(threshold=sys.maxsize)
-
-
 predictions = model.predict(x_test)
-predictions = np.round(predictions, decimals=0)
 print('Actual:', class_names[y_test[sample]][0])
 print('AI Prediction:', class_names[np.argmax(predictions[sample])])
+print('Indexes: ', class_names)
+print('AI Probabilities', np.round(predictions, decimals=3)[sample])
 plt.imshow(x_test[sample])
 plt.show()
