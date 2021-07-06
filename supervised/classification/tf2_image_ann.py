@@ -32,7 +32,7 @@ else:
     model.summary()
 
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['sparse_categorical_accuracy'])
-    model.fit(x_train, y_train, epochs=10)
+    model.fit(x_train, y_train, epochs=10, batch_size=8)
     model.save(MODEL_SAVE_PATH)
 
     test_loss, test_accuracy = model.evaluate(x_test, y_test)
