@@ -7,7 +7,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.keras.datasets import cifar10
 
-MODEL_SAVE_PATH = 'models/tf2_convolutional_cnn'
+MODEL_SAVE_PATH = 'models/tf2_color_image_cnn'
 
 class_names = np.array(['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'])
 
@@ -56,7 +56,7 @@ print("Sample index at", sample)
 predictions = model.predict(x_test)
 print('Actual:', class_names[y_test[sample]][0])
 print('AI Prediction:', class_names[np.argmax(predictions[sample])])
-print('Indexes: ', class_names)
-print('AI Probabilities', np.round(predictions, decimals=3)[sample])
+formatted_probabilities = np.vstack((class_names, np.round(predictions, decimals=3)[sample])).T
+print("AI Probabilities:\n", formatted_probabilities)
 plt.imshow(x_test[sample])
 plt.show()
