@@ -9,6 +9,11 @@ from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 from nes_py.wrappers import JoypadSpace
 from skimage.transform import resize
 
+# Comment out to disable saving and loading
+SAVE_PATH = "./models/mario_bros"
+# SAVE_PATH = False
+
+
 
 class Agent:
 
@@ -75,7 +80,8 @@ def main():
     output_shape = agent.num_actions
     agent.env.reset()
     agent.env.close()
-    model = DeepQModel(input_shape, output_shape, learning_rate=0.1, gamma=0.99, save_path="./models/mario_bros")
+    #
+    model = DeepQModel(input_shape, output_shape, learning_rate=0.01, gamma=0.9, save_path=SAVE_PATH)
 
     # Episodes
     for episode in range(0, 1000):
@@ -99,13 +105,13 @@ def main():
             agent.env.render()
             current_state = np.array([current_state])
             next_state = np.array([next_state])
-            model.appendReplay((current_state, action, reward, next_state, done))
+            model.append_replay((current_state, action, reward, next_state, done))
             current_state = next_state
             if done:
-                print("Episode", episode, game_reward, model.epsilon)
+                print("Episode", episode, game_reward, model.gamma)
                 game_rewards.append(game_reward)
                 print("Rewards:", game_rewards)
-                model.syncNetworks()
+                model.sync_networks()
                 break
         # After game ended
         model.train()
@@ -113,9 +119,7 @@ def main():
         agent.env.close()
 
         if episode % 10 == 0:
-            print("Saving...")
             model.save_model()
-            print("Done.")
 
 
 main()

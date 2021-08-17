@@ -1,9 +1,9 @@
 import os
-
-import tensorflow as tf
-import numpy as np
 from collections import deque
 from random import sample
+
+import numpy as np
+import tensorflow as tf
 
 
 class DeepQModel:
@@ -24,7 +24,7 @@ class DeepQModel:
             discount factor to be multiplied with the future rewards
     """
 
-    def __init__(self, input_shape, output_shape, learning_rate, gamma, save_path):
+    def __init__(self, input_shape, output_shape, learning_rate: float, gamma: float, save_path = False):
         """
         Description
         -----------
@@ -37,32 +37,25 @@ class DeepQModel:
         self.replayBuffer = deque(maxlen=10000)
         self.gamma = gamma
         self.epsilon = 1.0
-        if os.path.exists(self.save_path):
+        if not save_path:
+            print("Saving Disabled, creating new temporary Model")
+            self.predictionModel = self.build_model()
+        elif os.path.exists(self.save_path):
             print("Loading model from", self.save_path)
             self.predictionModel = self.load_model(self.save_path)
         else:
             print("No model found at", self.save_path)
-            self.predictionModel = self.buildmodel()
-        self.targetModel = self.buildmodel()
+            self.predictionModel = self.build_model()
+        self.targetModel = self.build_model()
         self.targetModel.set_weights(self.predictionModel.get_weights())
 
-    def syncNetworks(self):
+    def sync_networks(self):
         self.targetModel.set_weights(self.predictionModel.get_weights())
 
     def predict(self, state):
         return self.predictionModel.predict(state)
 
-    def buildmodel(self):
-        """
-        Description
-        -----------
-            The function here takes no inputs and outputs a keras model.
-            keras deep learning model which takes state as input and outputs
-            all the Q values for all possible actions.
-            Its a deep neural network with 2 hidden layers and one output layer
-            with  relu activation for hidden layer and linear activations for
-            output action Q value pair layer.
-        """
+    def build_model(self):
         model = tf.keras.models.Sequential()
         model.add(tf.keras.layers.Conv2D(32, 8, strides=(4, 4), padding='valid', input_shape=self.input_shape,
                                          activation='relu'))
@@ -70,28 +63,19 @@ class DeepQModel:
         model.add(tf.keras.layers.Conv2D(64, 3, strides=(1, 1), padding='valid', activation='relu'))
         model.add(tf.keras.layers.Flatten())
         model.add(tf.keras.layers.Dense(self.output_shape, activation='linear'))
-        model.compile(loss=tf.keras.losses.Huber(), optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate))
-        model.summary()
+        model.compile(loss=tf.keras.losses.Huber(),
+                      optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate))
         return model
 
-    def appendReplay(self, data):
-        """
-        Description
-        -----------
-        Keep a set of 2000 most recend record which will be used for training
-        so the neural network doesnt forget the Q value estimates
-        Parameters
-        ----------
-        data : tuple
-            contains state, action, reward, next_state, done as a tuple
-        """
+    def append_replay(self, data):
         self.replayBuffer.append(data)
 
-    def decay(self):
+    def epsilon_decay(self):
         if self.epsilon > 0.01:
-            self.epsilon = 0.995 * self.epsilon
+            self.epsilon = 0.97 * self.epsilon
         else:
             self.epsilon = 0.01
+        print('Epsilon decayed to', self.epsilon)
 
     def epsilon_condition(self):
         return np.random.rand() <= self.epsilon
@@ -101,19 +85,15 @@ class DeepQModel:
         return model
 
     def save_model(self):
-        self.predictionModel.save(self.save_path)
+        if self.save_path:
+            print("Saving...")
+            self.predictionModel.save(self.save_path)
+            print("Done.")
 
-    def train(self, batchSize=32):
-        """
-        Parameters
-        ----------
-        model : keras model
-            A Sequential model from keras to predict the stage action rewards
-        batchSize : Integer
-            The batch to be trained after every play
-        """
-        if batchSize < len(self.replayBuffer):
-            samples = sample(self.replayBuffer, batchSize)
+
+def train(self, batch_size=32):
+        if batch_size < len(self.replayBuffer):
+            samples = sample(self.replayBuffer, batch_size)
         else:
             samples = self.replayBuffer
         for observation in samples:
@@ -127,11 +107,4 @@ class DeepQModel:
             target_action_pair = self.predictionModel.predict(state)
             target_action_pair[0][action] = t
             self.predictionModel.fit(state, target_action_pair, epochs=1, verbose=0)
-        self.decay()
-
-
-
-
-
-
-
+        self.epsilon_decay()
