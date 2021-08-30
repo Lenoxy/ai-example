@@ -3,16 +3,16 @@ from collections import deque
 
 import gym_super_mario_bros
 import numpy as np
-from Model import DeepQModel
-from Utils import Utils
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 from nes_py.wrappers import JoypadSpace
 from skimage.transform import resize
 
+from Model import DeepQModel
+from Utils import Utils
+
 # Comment out to disable saving and loading
 SAVE_PATH = "./models/mario_bros"
 # SAVE_PATH = False
-
 
 
 class Agent:
@@ -50,9 +50,9 @@ class Agent:
 
             # Mario dies
             if done or info['time'] <= 1 or info['time'] > curr_time:
-                total_reward += info['x_pos'] / 5
+                total_reward += info['x_pos'] / 4
                 total_reward -= 70
-                total_reward -= curr_time / 5
+                total_reward -= curr_time / 10
                 done = True
                 break
             curr_time = info['time']
@@ -81,9 +81,9 @@ def main():
     agent.env.reset()
     agent.env.close()
     #
-    model = DeepQModel(input_shape, output_shape, learning_rate=0.01, gamma=0.9, save_path=SAVE_PATH)
+    model = DeepQModel(input_shape, output_shape, learning_rate=0.05, gamma=0.995, save_path=SAVE_PATH)
 
-    # Episodes
+    # An episode is an individual game
     for episode in range(0, 1000):
 
         agent = Agent(img_height, img_width)
@@ -93,19 +93,19 @@ def main():
         current_state = np.array([current_state])
         curr_time = 400
 
-        # Four Frames
-        for frame in range(0, 10000):
+        # Further comments and names refer to these four frames as iteration
+        for iteration in range(0, 10000):
             game_reward = 0
             action = agent.random_action() if model.epsilon_condition() else \
                 np.argmax(model.predict([current_state])[0])
 
-            current_state, next_state, reward, done, curr_time = agent.play(action, curr_time)
-            game_reward += reward
+            current_state, next_state, frame_reward, done, curr_time = agent.play(action, curr_time)
+            game_reward += frame_reward
             # Optional, make training process watchable
             agent.env.render()
             current_state = np.array([current_state])
             next_state = np.array([next_state])
-            model.append_replay((current_state, action, reward, next_state, done))
+            model.append_replay((current_state, action, frame_reward, next_state, done))
             current_state = next_state
             if done:
                 print("Episode", episode, game_reward, model.gamma)

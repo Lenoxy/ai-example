@@ -34,7 +34,7 @@ class DeepQModel:
         self.input_shape = input_shape
         self.output_shape = output_shape
         self.learning_rate = learning_rate
-        self.replayBuffer = deque(maxlen=10000)
+        self.buffer = deque(maxlen=10000)
         self.gamma = gamma
         self.epsilon = 1.0
         if not save_path:
@@ -60,7 +60,7 @@ class DeepQModel:
         model.add(tf.keras.layers.Conv2D(32, 8, strides=(4, 4), padding='valid', input_shape=self.input_shape,
                                          activation='relu'))
         model.add(tf.keras.layers.Conv2D(64, 4, strides=(2, 2), padding='valid', activation='relu'))
-        model.add(tf.keras.layers.Conv2D(64, 3, strides=(1, 1), padding='valid', activation='relu'))
+        model.add(tf.keras.layers.Conv2D(128, 3, strides=(1, 1), padding='valid', activation='relu'))
         model.add(tf.keras.layers.Flatten())
         model.add(tf.keras.layers.Dense(self.output_shape, activation='linear'))
         model.compile(loss=tf.keras.losses.Huber(),
@@ -68,7 +68,7 @@ class DeepQModel:
         return model
 
     def append_replay(self, data):
-        self.replayBuffer.append(data)
+        self.buffer.append(data)
 
     def epsilon_decay(self):
         if self.epsilon > 0.01:
@@ -91,20 +91,20 @@ class DeepQModel:
             print("Done.")
 
 
-def train(self, batch_size=32):
-        if batch_size < len(self.replayBuffer):
-            samples = sample(self.replayBuffer, batch_size)
-        else:
-            samples = self.replayBuffer
-        for observation in samples:
-            state, action, reward, next_state, done = observation
-            if done is True:
-                t = reward
+    def train(self, batch_size=64):
+            if batch_size < len(self.buffer):
+                samples = sample(self.buffer, batch_size)
             else:
-                next_state_max_reward = np.amax(self.targetModel.predict(next_state))
-                t = reward + (self.gamma * next_state_max_reward)
+                samples = self.buffer
+            for observation in samples:
+                state, action, reward, next_state, done = observation
+                if done is True:
+                    t = reward
+                else:
+                    next_state_max_reward = np.amax(self.targetModel.predict(next_state))
+                    t = reward + (self.gamma * next_state_max_reward)
 
-            target_action_pair = self.predictionModel.predict(state)
-            target_action_pair[0][action] = t
-            self.predictionModel.fit(state, target_action_pair, epochs=1, verbose=0)
-        self.epsilon_decay()
+                target_action_pair = self.predictionModel.predict(state)
+                target_action_pair[0][action] = t * (-1)
+                self.predictionModel.fit(state, target_action_pair, epochs=1, verbose=0)
+            self.epsilon_decay()
