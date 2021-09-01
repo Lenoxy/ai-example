@@ -1,33 +1,28 @@
 import os
 from collections import deque
 from random import sample
+from Config import SAVE_PATH, READ_SAVED_MODEL, SAVE_MODEL
 
 import numpy as np
 import tensorflow as tf
 
 
 class DeepQModel:
-    def __init__(self, input_shape, output_shape, learning_rate: float, gamma: float, save_path=False):
-        """
-        Description
-        -----------
-        Initialize shapes, learning_rate, decay and epsilon
-        """
-        self.save_path = save_path
+    def __init__(self, input_shape, output_shape, learning_rate: float, gamma: float):
         self.input_shape = input_shape
         self.output_shape = output_shape
         self.learning_rate = learning_rate
         self.buffer = deque(maxlen=10000)
         self.gamma = gamma
-        self.epsilon = 1.0
-        if not save_path:
-            print("Saving Disabled, creating new temporary Model")
+        self.epsilon = 0.9
+        if not READ_SAVED_MODEL:
+            print("Saving disabled, creating new temporary Model")
             self.predictionModel = self.build_model()
-        elif os.path.exists(self.save_path):
-            print("Loading model from", self.save_path)
-            self.predictionModel = self.load_model(self.save_path)
+        elif os.path.exists(SAVE_PATH):
+            print("Loading model from", SAVE_PATH)
+            self.predictionModel = self.load_model(SAVE_PATH)
         else:
-            print("No model found at", self.save_path)
+            print("No model found at", SAVE_PATH)
             self.predictionModel = self.build_model()
         self.targetModel = self.build_model()
         self.targetModel.set_weights(self.predictionModel.get_weights())
@@ -58,19 +53,19 @@ class DeepQModel:
             self.epsilon = 0.99 * self.epsilon
         else:
             self.epsilon = 0.01
-        print('Epsilon decayed to', self.epsilon)
 
     def epsilon_condition(self):
-        return np.random.rand() <= self.epsilon
+        val = np.random.rand() <= self.epsilon
+        return val
 
     def load_model(self, path):
         model = tf.keras.models.load_model(path)
         return model
 
     def save_model(self):
-        if self.save_path:
-            print("Saving...")
-            self.predictionModel.save(self.save_path)
+        if SAVE_MODEL:
+            print("Saving model...")
+            self.predictionModel.save(SAVE_PATH)
             print("Done.")
 
     def train(self, batch_size=64):
