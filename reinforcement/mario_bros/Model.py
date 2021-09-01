@@ -7,24 +7,7 @@ import tensorflow as tf
 
 
 class DeepQModel:
-    """
-        Description
-        -----------
-            the class deals with building the right parameters and functions to
-            built a deep learning agent that learn and play games
-        Parameters
-        ----------
-        input_shape : Integer
-            the shape for the input states
-        output_shape : Integer
-            the number of possible actions
-        learning_rate : Double
-            learning rate for the optimizer for neural network
-        gamma : Double
-            discount factor to be multiplied with the future rewards
-    """
-
-    def __init__(self, input_shape, output_shape, learning_rate: float, gamma: float, save_path = False):
+    def __init__(self, input_shape, output_shape, learning_rate: float, gamma: float, save_path=False):
         """
         Description
         -----------
@@ -72,7 +55,7 @@ class DeepQModel:
 
     def epsilon_decay(self):
         if self.epsilon > 0.01:
-            self.epsilon = 0.97 * self.epsilon
+            self.epsilon = 0.99 * self.epsilon
         else:
             self.epsilon = 0.01
         print('Epsilon decayed to', self.epsilon)
@@ -90,21 +73,20 @@ class DeepQModel:
             self.predictionModel.save(self.save_path)
             print("Done.")
 
-
     def train(self, batch_size=64):
-            if batch_size < len(self.buffer):
-                samples = sample(self.buffer, batch_size)
+        if batch_size < len(self.buffer):
+            samples = sample(self.buffer, batch_size)
+        else:
+            samples = self.buffer
+        for observation in samples:
+            state, action, reward, next_state, done = observation
+            if done is True:
+                t = reward
             else:
-                samples = self.buffer
-            for observation in samples:
-                state, action, reward, next_state, done = observation
-                if done is True:
-                    t = reward
-                else:
-                    next_state_max_reward = np.amax(self.targetModel.predict(next_state))
-                    t = reward + (self.gamma * next_state_max_reward)
+                next_state_max_reward = np.amax(self.targetModel.predict(next_state))
+                t = reward + (self.gamma * next_state_max_reward)
 
-                target_action_pair = self.predictionModel.predict(state)
-                target_action_pair[0][action] = t * (-1)
-                self.predictionModel.fit(state, target_action_pair, epochs=1, verbose=0)
-            self.epsilon_decay()
+            target_action_pair = self.predictionModel.predict(state)
+            target_action_pair[0][action] = t * (-1)
+            self.predictionModel.fit(state, target_action_pair, epochs=1, verbose=0)
+        self.epsilon_decay()

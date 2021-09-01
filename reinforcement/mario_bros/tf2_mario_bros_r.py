@@ -12,6 +12,8 @@ from Utils import Utils
 
 # Comment out to disable saving and loading
 SAVE_PATH = "./models/mario_bros"
+
+
 # SAVE_PATH = False
 
 
@@ -44,18 +46,31 @@ class Agent:
         current_state = current_state.transpose(1, 2, 0)
 
         total_reward = 0
+        # Initialize values
+        x_pos = 40  # Starting point
+        curr_time = 400  # Starting time
         for _ in range(0, skip_frame):
             state, reward, done, info = self.env.step(act)
             total_reward = total_reward + reward
 
-            # Mario dies
+
+            # Mario dies or time is up
             if done or info['time'] <= 1 or info['time'] > curr_time:
-                total_reward += info['x_pos'] / 4
+                # Remove a lot of points if time is still high
+                if curr_time > 350:
+                    total_reward -= 300
+                # Remove some points to not reward the AI immediately
                 total_reward -= 70
+                # Give more points, the further Mario gets
+                total_reward += x_pos / 4
+                # The more time is left, the more points are removed
                 total_reward -= curr_time / 10
                 done = True
                 break
+
+            # Information from the frame just before the game ends must be gathered before Mario dies
             curr_time = info['time']
+            x_pos = info['x_pos']
 
         state = resize(Utils.pre_process(state), (self.height, self.width), anti_aliasing=True)
 
@@ -81,7 +96,7 @@ def main():
     agent.env.reset()
     agent.env.close()
     #
-    model = DeepQModel(input_shape, output_shape, learning_rate=0.05, gamma=0.995, save_path=SAVE_PATH)
+    model = DeepQModel(input_shape, output_shape, learning_rate=0.1, gamma=0.995, save_path=SAVE_PATH)
 
     # An episode is an individual game
     for episode in range(0, 1000):
