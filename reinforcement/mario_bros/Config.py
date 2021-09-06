@@ -1,5 +1,6 @@
 READ_SAVED_MODEL = True
 SAVE_MODEL = True
 DETAIL_LOGGING = False
-GRAPH = True
+PROBABILITY_GRAPH = True
+AI_GRAPH_PER_ROUND=True
 SAVE_PATH = "./models/mario_bros"

@@ -7,10 +7,10 @@ import numpy as np
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 from nes_py.wrappers import JoypadSpace
 from skimage.transform import resize
-from Config import *
 
+from Config import *
 from Model import DeepQModel
-from Utils import Utils
+from Utils import Utils, Actions
 
 
 class Agent:
@@ -48,19 +48,8 @@ class Agent:
             total_reward = total_reward + reward
             # Mario dies or time is up
             if done or info['time'] <= 1 or info['time'] > curr_time:
-                # Remove a lot of points if time is still high
-                if curr_time > 350:
-                    total_reward -= 300
-                # Reward for completing the level
-                if done:
-                    total_reward += 1000
-                # Remove some points to not reward the AI immediately
-                total_reward -= 70
-                # Give more points, the further Mario gets
-                total_reward += x_pos / 3
-                # The more time is left, the more points are removed
-                total_reward -= curr_time / 10
-                done = True  # Exit iteration for loop
+                total_reward = self.reward_function(curr_time, done, x_pos)
+                done = True  # Exit iteration for-loop
                 break
 
             # Information from the frame just before the game ends must be gathered before Mario dies
@@ -77,6 +66,33 @@ class Agent:
         next_state = np.array(next_state)
         next_state = next_state.transpose(1, 2, 0)
         return current_state, next_state, total_reward, done, curr_time
+
+    @staticmethod
+    def reward_function(curr_time, done, x_pos):
+        print("REWARD CONSTELLATION:")
+
+        total_reward = 0
+        # Remove a lot of points if time is still high
+        if curr_time > 350:
+            total_reward -= 300
+            print("Time over 350: - 300")
+        # Reward for completing the level
+        if done:
+            total_reward += 1000
+            print("Level completed: + 1000")
+
+        # Remove some points to not reward the AI immediately
+        total_reward -= 100
+        print("Balance: - 100")
+        # Give more points, the further Mario gets
+        total_reward += x_pos / 3
+        print("X Position: +", x_pos / 3)
+        # The more time is left, the more points are removed
+        total_reward -= curr_time / 10
+        print("Time left: -", curr_time / 10)
+
+        print("TOTAL REWARD:", round(total_reward))
+        return round(total_reward)
 
 
 def main():
@@ -106,15 +122,21 @@ def main():
         current_state = np.array([current_state])
         curr_time = 400
 
+        games_info.append(dict.fromkeys(["reward", "epsilon", "gamma", "actions"]))
+        games_info[episode]['actions'] = []
         # Further comments and names refer to these four frames as iteration
         for iteration in range(0, 10000):
+
             game_reward = 0
 
             if model.epsilon_condition():
                 action = agent.random_action()
+                games_info[episode]['actions'].append([True, iteration, Actions(action)])
                 Utils.format_action(True, action)
             else:
                 action = np.argmax(model.predict([current_state])[0]).item()
+                games_info[episode]['actions'].append([False, iteration, Actions(action)])
+
                 Utils.format_action(False, action)
 
             current_state, next_state, frame_reward, done, curr_time = agent.play(action, curr_time)
@@ -133,16 +155,30 @@ def main():
         print("Episode:", episode, "Reward:", game_reward, "Gamma:", model.gamma, "Epsilon:", model.epsilon)
 
         # Save statistics
-        games_info.append(dict.fromkeys(["reward", "epsilon", "gamma"]))
         games_info[episode]['reward'] = game_reward
         games_info[episode]['epsilon'] = model.epsilon
         games_info[episode]['gamma'] = model.gamma
 
+        if AI_GRAPH_PER_ROUND:
+            x_frame = [a[1] for a in games_info[episode]['actions']]
+            y_action = [a[2].value for a in games_info[episode]['actions']]
+
+            y_is_random = [a[0] for a in games_info[episode]['actions']]
+            y_color_format = []
+            for is_random in y_is_random:
+                if is_random is True:
+                    y_color_format.append('black')
+                else:
+                    y_color_format.append('red')
+
+
+            plt.scatter(x_frame, y_action, c=y_color_format)
+            plt.show()
 
         if episode % 10 == 0 and episode > 0:
-            if GRAPH:
+            if PROBABILITY_GRAPH:
                 plt.plot([d['reward'] for d in games_info])
-                plt.plot([d['epsilon'] for d in games_info])
+                plt.plot([d['epsilon'] * 100 for d in games_info])
                 plt.show()
             model.save_model()
 
