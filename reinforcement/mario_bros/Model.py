@@ -14,7 +14,7 @@ class DeepQModel:
         self.learning_rate = learning_rate
         self.buffer = deque(maxlen=10000)
         self.gamma = gamma
-        self.epsilon = 0.9
+        self.epsilon = 0.5
         if not READ_SAVED_MODEL:
             print("Saving disabled, creating new temporary Model")
             self.predictionModel = self.build_model()
