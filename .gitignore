@@ -239,4 +239,9 @@ Thumbs.db
 .prof
 
 
+# Models
+supervised/classification/models/
+reinforcement/models/
+
+
 # End of https://www.toptal.com/developers/gitignore/api/python,pycharm+all
