@@ -104,7 +104,7 @@ def main():
     img_height = int(224 / 2)
     img_width = int(256 / 2)
 
-    # Define shape of the input - stack of 4 frames
+    # Define shape of the input - stack of 4 frames -> one iteration
     input_shape = (img_height, img_width, 4)
 
     # Create agent
@@ -122,7 +122,10 @@ def main():
         current_state = agent.iteration_frames.copy()
         current_state = np.array(current_state)
         current_state = current_state.transpose(1, 2, 0)
+        current_state = np.array([current_state])
         curr_time = 400
+
+        temp_state_hist = deque(maxlen=100)
 
         games_info.append(dict.fromkeys(['reward', 'epsilon', 'gamma', 'actions']))
         games_info[episode]['actions'] = []
@@ -137,6 +140,7 @@ def main():
                 Utils.format_action(True, action)
             else:
                 action = np.argmax(model.predict(current_state)[0]).item()
+                temp_state_hist.append(current_state)
                 games_info[episode]['actions'].append([False, iteration, Actions(action)])
 
                 Utils.format_action(False, action)

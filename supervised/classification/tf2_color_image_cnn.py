@@ -1,5 +1,4 @@
 import os
-import sys
 from random import randrange
 
 import numpy as np

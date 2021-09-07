@@ -1,13 +1,11 @@
-import math
 import random
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-import matplotlib.pyplot as plt
-import pandas_datareader as data_reader
-
-from tqdm import tqdm_notebook, tqdm
 from collections import deque
+
+import math
+import numpy as np
+import pandas_datareader as data_reader
+import tensorflow as tf
+from tqdm import tqdm
 
 
 class AI_Trader:
@@ -148,7 +146,6 @@ for episode in range(episodes + 1):
 
     done = time == data_samples - 1
 
-
     trader.memory.append((state, action, reward, next_state, done))
     state = next_state
 
@@ -161,4 +158,4 @@ for episode in range(episodes + 1):
         trader.batch_train(batch_size)
 
     if episode % 10 == 0:
-        trader.model.save("models/ai_trader_{}.h5".format(episode))
+        trader.model.save("models/ai_trader.h5")

@@ -6,5 +6,5 @@ AI_GRAPH_PER_ROUND = True
 SAVE_PATH = "./models/mario_bros"
 
 
-SHOW_AI_VIEW = False
-SHOW_RENDERED_VIEW = True
+SHOW_AI_VIEW = True
+SHOW_RENDERED_VIEW = False
