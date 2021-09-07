@@ -3,8 +3,7 @@ SAVE_MODEL = True
 DETAIL_LOGGING = False
 PROBABILITY_GRAPH = True
 AI_GRAPH_PER_ROUND = True
-SAVE_PATH = "./models/mario_bros"
-
+SAVE_PATH = "../models/mario_bros"
 
 SHOW_AI_VIEW = True
 SHOW_RENDERED_VIEW = False
