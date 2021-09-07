@@ -20,16 +20,16 @@ class Agent:
         self.env = JoypadSpace(self.env, SIMPLE_MOVEMENT)
 
         self.num_actions = self.env.action_space.n
-        # This variable holds the last four frames as RGB matrix
-        self.iteration_frame = deque(maxlen=4)
+        # This variable holds the last four frames as an RGB matrix
+        self.iteration_frames = deque(maxlen=4)
         self.height = height
         self.width = width
 
         # Initialize state with empty frames
-        self.iteration_frame.append(np.zeros((height, width)))
-        self.iteration_frame.append(np.zeros((height, width)))
-        self.iteration_frame.append(np.zeros((height, width)))
-        self.iteration_frame.append(np.zeros((height, width)))
+        self.iteration_frames.append(np.zeros((height, width)))
+        self.iteration_frames.append(np.zeros((height, width)))
+        self.iteration_frames.append(np.zeros((height, width)))
+        self.iteration_frames.append(np.zeros((height, width)))
 
         self.env.reset()
 
@@ -37,15 +37,21 @@ class Agent:
         return random.randint(0, self.num_actions - 1)
 
     def play(self, act, curr_time, skip_frame=4):
-        current_state = self.iteration_frame.copy()
+        current_state = self.iteration_frames.copy()
+
+        if SHOW_AI_VIEW:
+            plt.imshow(current_state.__getitem__(0))
+            plt.show()
+
         current_state = np.array(current_state)
-        # Fills the tuple with zeroes
+        # Fills the frames with zeroes
         current_state = current_state.transpose(1, 2, 0)
 
         total_reward = 0
         x_pos = 40  # Starting x coordinate
+        # One calculated or random action is used for this iteration
         for _ in range(0, skip_frame):
-            state, reward, done, info = self.env.step(act)
+            latest_iteration_state, reward, done, info = self.env.step(act)
             total_reward = total_reward + reward
             # Mario dies or time is up
             if done or info['time'] <= 1 or info['time'] > curr_time:
@@ -57,13 +63,13 @@ class Agent:
             curr_time = info['time']
             x_pos = info['x_pos']
 
-            # Optional, make training process watchable
-            self.env.render()
+            if SHOW_RENDERED_VIEW:
+                self.env.render()
 
-        state = resize(Utils.pre_process(state), (self.height, self.width), anti_aliasing=True)
+        latest_iteration_state = resize(Utils.pre_process(latest_iteration_state), (self.height, self.width), anti_aliasing=True)
 
-        self.iteration_frame.append(state)
-        next_state = self.iteration_frame.copy()
+        self.iteration_frames.append(latest_iteration_state)
+        next_state = self.iteration_frames.copy()
         next_state = np.array(next_state)
         next_state = next_state.transpose(1, 2, 0)
         return current_state, next_state, total_reward, done, curr_time
@@ -113,10 +119,9 @@ def main():
     for episode in range(0, 1000):
 
         agent = Agent(img_height, img_width)
-        current_state = agent.iteration_frame.copy()
+        current_state = agent.iteration_frames.copy()
         current_state = np.array(current_state)
         current_state = current_state.transpose(1, 2, 0)
-        current_state = np.array([current_state])
         curr_time = 400
 
         games_info.append(dict.fromkeys(['reward', 'epsilon', 'gamma', 'actions']))
@@ -131,16 +136,16 @@ def main():
                 games_info[episode]['actions'].append([True, iteration, Actions(action)])
                 Utils.format_action(True, action)
             else:
-                action = np.argmax(model.predict([current_state])[0]).item()
+                action = np.argmax(model.predict(current_state)[0]).item()
                 games_info[episode]['actions'].append([False, iteration, Actions(action)])
 
                 Utils.format_action(False, action)
 
-            current_state, next_state, frame_reward, done, curr_time = agent.play(action, curr_time)
-            game_reward += frame_reward
+            current_state, next_state, iteration_reward, done, curr_time = agent.play(action, curr_time)
+            game_reward += iteration_reward
             current_state = np.array([current_state])
             next_state = np.array([next_state])
-            model.append_replay((current_state, action, frame_reward, next_state, done))
+            model.append_replay((current_state, action, iteration_reward, next_state, done))
             current_state = next_state
             if done:
                 model.sync_networks()
