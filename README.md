@@ -1,5 +1,5 @@
 # Super Mario AI
-The project has not finished been yet.
+The project has not been finished ...yet.
 
 
 ## AI general categories

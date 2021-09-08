@@ -39,10 +39,6 @@ class Agent:
     def play(self, act, curr_time, skip_frame=4):
         current_state = self.iteration_frames.copy()
 
-        if SHOW_AI_VIEW:
-            plt.imshow(current_state.__getitem__(0))
-            plt.show()
-
         current_state = np.array(current_state)
         # Fills the frames with zeroes
         current_state = current_state.transpose(1, 2, 0)
@@ -66,7 +62,12 @@ class Agent:
             if SHOW_RENDERED_VIEW:
                 self.env.render()
 
+
         latest_iteration_state = resize(Utils.pre_process(latest_iteration_state), (self.height, self.width), anti_aliasing=True)
+
+        if SHOW_AI_VIEW:
+            plt.imshow(latest_iteration_state)
+            plt.show()
 
         self.iteration_frames.append(latest_iteration_state)
         next_state = self.iteration_frames.copy()
